@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carga de archivos</title>
+
+  
+  
+</head>
+
+<body>
+  <h1>Carga de archivos</h1>
+  <form id="upload-form" enctype="multipart/form-data">
+    <label for="file-upload" class="file-upload-label">
+      <input id="file-upload" type="file" name="files[]" multiple class="file-upload-input" />
+      Seleccionar archivos
+    </label>
+    <input type="submit" value="Cargar" />
+  </form>
+
+  <div id="file-info"></div>
+
+  <script>
+
+    const form = document.querySelector('#upload-form');
+    const fileInfoDiv = document.querySelector('#file-info');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const fileInput = document.querySelector('input[type="file"]');
+      const files = fileInput.files;
+
+      if (files.length === 0) {
+        fileInfoDiv.innerHTML = 'No se seleccionó ningún archivo.';
+        return;
+      }
+
+      
+      const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+      const maxSize = 10 * 1024 * 1024; // 10 MB
+
+      const fileInfos = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        if (!allowedTypes.includes(file.type)) {
+          fileInfos.push({
+            filename: file.name,
+            error: 'Tipo de archivo no permitido. Los formatos válidos son: JPEG, PNG, PDF.'
+          });
+        } else if (file.size > maxSize) {
+          fileInfos.push({
+            filename: file.name,
+            error: 'El tamaño del archivo excede el límite permitido de 10 MB.'
+          });
+        } else {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (response.ok) {
+            const fileInfo = await response.json();
+            fileInfos.push(fileInfo);
+          } else {
+            fileInfos.push({
+              filename: file.name,
+              error: 'Error al cargar el archivo.'
+            });
+          }
+        }
+      }
+
+      let fileInfoHTML = '';
+
+      for (let i = 0; i < fileInfos.length; i++) {
+        const fileInfo = fileInfos[i];
+
+        fileInfoHTML += '<div class="file-info-item">';
+
+        if (fileInfo.error) {
+          fileInfoHTML += `
+            <label>${fileInfo.filename}</label>
+            <span class="file-info-error">${fileInfo.error}</span>
+          `;
+        } else {
+          fileInfoHTML += `
+            <label>Archivo ${i + 1}:</label>
+            <p><strong>Nombre:</strong> ${fileInfo.filename}</p>
+            <p><strong>Nombre original:</strong> ${fileInfo.originalname}</p>
+            <p><strong>Tamaño:</strong> ${fileInfo.size} bytes</p>
+            <p><strong>Tipo MIME:</strong> ${fileInfo.mimetype}</p>
+          `;
+        }
+
+        fileInfoHTML += '</div>';
+      }
+
+      fileInfoDiv.innerHTML = fileInfoHTML;
+    });
+  </script>
+</body>
+
+</html>
+<style>
+ 
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f2f2f2;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+    text-align: center;
+    color: #333;
+  }
+
+  form {
+    margin-bottom: 20px;
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+
+  .file-upload-label {
+    display: inline-block;
+    background-color: #f2f2f2;
+    color: #333;
+    border: 2px solid #333;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .file-upload-label:hover {
+    background-color: #333;
+    color: #fff;
+  }
+
+  .file-upload-input {
+    margin-right: 10px;
+  }
+
+  #file-info {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .file-info-item {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 10px;
+  }
+
+  .file-info-item:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .file-info-item label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+    color: #555;
+  }
+
+  .file-info-item span {
+    margin-left: 10px;
+    color: #777;
+  }
+
+  .file-info-error {
+    color: #dc3545;
+  }
+
+  .file-upload-button {
+    display: inline-block;
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .file-upload-button:hover {
+    background-color: #555;
+  }
+
+  .file-upload-button:active {
+    background-color: #222;
+  }
+
+  .file-upload-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.3);
+  }
+</style>
